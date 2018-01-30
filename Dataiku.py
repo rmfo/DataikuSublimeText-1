@@ -151,6 +151,19 @@ def open_recipe(window, instance, project_key, recipe_name):
     sublime.set_timeout(lambda:window.open_file(local_file), 0)
 
 
+def list_datasets(dss_url, dss_key,project_key):
+    datasetlist=[]
+
+    datasets = api_dss(dss_url, dss_key, "projects/%s/datasets/" % (project_key))
+    for dataset in datasets:
+       if dataset.get('name'):
+           if dataset.get('formatType'):           
+               datasetlist.append((dataset.get('name')+"\t"+dataset.get('formatType')+" Dataset",dataset.get('name')))
+           else:
+               datasetlist.append((dataset.get('name')+"\tDSS Dataset",dataset.get('name')))
+    
+    return datasetlist
+
 # External Commands
 class DataikuInstancesCommand(sublime_plugin.WindowCommand):
     def run(self):
@@ -196,3 +209,20 @@ class RecipeEditListener(sublime_plugin.EventListener):
         if file and temp_dir in file:
             print("DataikuSublimeText -", "Removing closed document:", file)
             os.remove(file)
+
+
+    def on_query_completions(self, view, prefix, locations):
+
+        file = view.file_name()
+
+
+        if temp_dir in file:
+            print("DataikuSublimeText -", "Sending saved document %s" % file)
+            recipe_name = file.split(os.sep)[-1]
+            project_key = file.split(os.sep)[-2]
+            dss_key = base64ToString(file.split(os.sep)[-3])
+            dss_url = base64ToString(file.split(os.sep)[-4])
+            completions = list_datasets(dss_url, dss_key,project_key)
+            return (completions)
+        
+
